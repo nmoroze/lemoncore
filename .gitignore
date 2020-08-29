@@ -1,0 +1,17 @@
+# Verilator outputs
+obj_dir/
+
+# Firmware outputs
+*.bin
+*.elf
+*.o
+*.mem
+
+# Simulation outputs
+*.vcd
+
+# FPGA outputs
+*.bit
+*.asc
+*.log
+lemonsoc.json

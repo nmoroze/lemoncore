@@ -1,0 +1,30 @@
+language: c
+dist: focal
+
+addons:
+  apt:
+    update: true
+    packages:
+      - build-essential
+      - flex
+      - bison
+      - libfl2
+      - libfl-dev
+      - gcc-riscv64-unknown-elf
+      - yosys
+      - libboost-all-dev
+      - libeigen3-dev
+      - libftdi-dev
+
+before_install:
+  - .ci/install-verilator.sh
+  - .ci/install-gtest.sh
+  - .ci/install-icestorm.sh
+  - .ci/install-nextpnr.sh
+  - pip3 install bin2coe
+
+script:
+  - make sim-core
+  - make test-core
+  - make test-soc
+  - cd soc; make
