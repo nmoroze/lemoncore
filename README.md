@@ -18,6 +18,7 @@ The simulation requires installing the following dependencies:
 
 - [RISC-V toolchain][riscv]
 - [Verilator (minimum v4.034)][verilator]
+- [cxxopts][cxxopts]
 
 Then, run `make sim` to run the simulator on the default firmware (`sw/hello.c`).
 
@@ -32,15 +33,20 @@ an [Icebreaker FPGA][icebreaker].
 #### Dependencies
 - [RISC-V toolchain][riscv-gcc]
 - [Verilator (minimum v4.034)][verilator]
+- [cxxopts][cxxopts]
 
 #### Commands
 ```
 make sim-soc FW=<firmware>
 ```
-Runs interactive SoC simulation, with outputs shown as an ASCII representation
-of the Icebreaker LEDs. Runs `sw/hello.c` by default, but setting the optional
-`FW` variable will cause Make to build `sw/<firmware>.c` and run that file
-instead.
+Runs interactive SoC simulation. The simulator displays an ASCII representation
+of the Icebreaker LEDs, and uses the keyboard for providing button input. Runs
+`sw/hello.c` by default, but setting the optional `FW` variable will cause Make
+to build `sw/<firmware>.c` and run that file instead.
+
+You can also run the simulator executable directly. Run `make socsim` to compile
+the binary, then `./socsim` to run. Run `./socsim --help` for more info on
+command line configuration options.
 
 ```
 make sim-core FW=<firmware>
@@ -48,7 +54,6 @@ make sim-core FW=<firmware>
 Runs simulation of Lemoncore alone. This provides outputs as a trace of memory
 reads/writes. The software to run can be selected via `FW` as in the SoC
 simulation target.
-
 
 ### Tests
 
@@ -126,3 +131,4 @@ This project is copyright 2020 Noah Moroze, released under the [MIT license][mit
 [nextpnr]: https://github.com/YosysHQ/nextpnr
 [icestorm]: http://bygone.clairexen.net/icestorm/
 [mit]: https://opensource.org/licenses/MIT
+[cxxopts]: https://github.com/jarro2783/cxxopts

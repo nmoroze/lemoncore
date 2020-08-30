@@ -1,15 +1,15 @@
 #include <stdlib.h>
 #include <fstream>
 #include <iostream>
+
+#include <cxxopts.hpp>
 #include <ncurses.h>
+
 #include "verilated.h"
 
 #include "lemonsoc.h"
 
-#ifndef FIRMWARE_PATH
-#define FIRMWARE_PATH "../soc/sw/hello.sim.mem"
-#endif
-
+#define DEFAULT_FW_PATH "sw/hello.sim.mem"
 #define NUM_CYCLES -1
 
 bool btn1 = false;
@@ -34,14 +34,14 @@ void output_leds(bool leds[5]) {
   refresh();
 }
 
-int run () {
+int run (std::string firmware_path) {
   Lemonsoc soc(false, false);
 
   int cycle = 0;
 
   // Load test code
-  if (!soc.load_firmware(FIRMWARE_PATH)) {
-    std::cerr << "Error reading file " << FIRMWARE_PATH << std::endl;
+  if (!soc.load_firmware(firmware_path)) {
+    std::cerr << "Error reading file " << firmware_path << std::endl;
     return 1;
   }
 
@@ -83,13 +83,34 @@ int run () {
 int main(int argc, char **argv) {
   Verilated::commandArgs(argc, argv);
 
+  // Parse command line options
+  cxxopts::Options options("socsim", "Interactive simulation of Lemoncore SoC");
+  options.add_options()
+    ("f,firmware", "Path to firmware file", cxxopts::value<std::string>()->default_value(DEFAULT_FW_PATH))
+    ("h,help", "Print usage")
+    ;
+
+  std::string firmware_path;
+  try {
+    auto result = options.parse(argc, argv);
+    if (result.count("help")) {
+      std::cout << options.help() << std::endl;
+      return 0;
+    }
+    firmware_path = result["firmware"].as<std::string>();
+  } catch (cxxopts::OptionException e) {
+    std::cerr << "Error parsing command line arguments: " << e.what() << std::endl;
+    return 1;
+  }
+
+
   // Init ncurses
   initscr();
   nodelay(stdscr, TRUE); // don't block on getch()
   noecho(); // don't echo input
 
   // Run simulation
-  int r = run();
+  int r = run(firmware_path);
 
   // De-init ncurses
   endwin();

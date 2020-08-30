@@ -1,5 +1,6 @@
 # Verilator outputs
 obj_dir/
+socsim
 
 # Firmware outputs
 *.bin

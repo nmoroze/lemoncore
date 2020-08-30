@@ -1,4 +1,4 @@
-.PHONY: sim clean prog sim-core sim-soc soc test test-core test-soc
+.PHONY: clean prog sim sim-core sim-soc test test-core test-soc
 .SECONDARY:
 
 all: lemonsoc-timing.rpt lemonsoc-utilization.rpt lemonsoc.bit
@@ -86,8 +86,11 @@ sim: sim-soc
 sim-core: obj_dir/lemonsim.verilator
 	$<
 
-sim-soc: obj_dir/lemonsoc_sim.verilator $(SIM_FW_PATH)
-	$<
+socsim: obj_dir/socsim
+	cp $< $@
+
+sim-soc: socsim $(SIM_FW_PATH)
+	$< --firmware $(SIM_FW_PATH)
 
 MODULE_TB_CPP_SRCS := sim/riscv.cpp sim/verilator-gtest-runner.cpp
 obj_dir/%.verilator: rtl/core/%.v sim/%_tb.cpp rtl/core/control_signals.vh $(MODULE_TB_CPP_SRCS) sim/riscv.h
@@ -105,8 +108,8 @@ obj_dir/lemonsim.verilator: $(CORE_V_SRCS) $(CORE_V_INC) $(CORE_SIM_CPP_SRCS) $(
 		--build $(CORE_SIM_CPP_SRCS) -o $(notdir $@)
 
 SOC_SIM_CPP_SRCS := sim/lemonsoc_sim.cpp sim/lemonsoc.cpp
-obj_dir/lemonsoc_sim.verilator: $(SOC_V_SRCS) $(SOC_V_INC) $(SOC_SIM_CPP_SRCS) sim/lemonsoc.h
-	verilator -CFLAGS "-std=gnu++14 -DFIRMWARE_PATH='\"$(SIM_FW_PATH)\"'" -DSIM --trace -Wall -LDFLAGS "-lncurses" \
+obj_dir/socsim: $(SOC_V_SRCS) $(SOC_V_INC) $(SOC_SIM_CPP_SRCS) sim/lemonsoc.h
+	verilator -CFLAGS "-std=gnu++14" -DSIM --trace -Wall -LDFLAGS "-lncurses" \
 		-cc $< -Irtl/core -Irtl/soc --exe --build  $(SOC_SIM_CPP_SRCS) -o $(notdir $@)
 
 SOC_TB_CPP_SRCS := sim/lemonsoc_tb.cpp sim/lemonsoc.cpp sim/riscv.cpp  sim/verilator-gtest-runner.cpp
@@ -149,6 +152,6 @@ prog: $(PROJ)-$(FW).bit
 
 clean:
 	rm -f *.asc *.rpt *.bit *.json *.log random.mem
-	rm -rf obj_dir/ sim/*.vcd *.vcd
+	rm -rf obj_dir/ sim/*.vcd *.vcd socsim
 	rm -f sw/*/*.o sw/*/*.elf sw/*/*.bin sw/*/*.mem \
 		sw/*.o sw/*.elf sw/*.bin sw/*.mem
