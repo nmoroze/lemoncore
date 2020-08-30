@@ -37,9 +37,10 @@ an [Icebreaker FPGA][icebreaker].
 ```
 make sim-soc FW=<firmware>
 ```
-Runs SoC simulation, with outputs shown as an ASCII representation of the Icebreaker LEDs. Runs
-`sw/hello.c` by default, but setting the optional `FW` variable will cause Make
-to build `sw/<firmware>.c` and run that file instead.
+Runs interactive SoC simulation, with outputs shown as an ASCII representation
+of the Icebreaker LEDs. Runs `sw/hello.c` by default, but setting the optional
+`FW` variable will cause Make to build `sw/<firmware>.c` and run that file
+instead.
 
 ```
 make sim-core FW=<firmware>

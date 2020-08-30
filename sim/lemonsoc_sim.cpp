@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <fstream>
 #include <iostream>
+#include <ncurses.h>
 #include "verilated.h"
 
 #include "lemonsoc.h"
@@ -11,27 +12,29 @@
 
 #define NUM_CYCLES -1
 
+bool btn1 = false;
+bool btn2 = false;
+bool btn3 = false;
+
 char led2c(bool led) {
   return led ? '*' : ' ';
 }
 
 void output_leds(bool leds[5]) {
-  static bool first = true;
-  if (!first) {
-    for (int i = 0; i < 5; i++) {
-      printf("\033[A");
-      printf("\33[2K");
-    }
-  }
-  printf("    (%c)     \n", led2c(leds[3]));
-  printf("(%c) (%c) (%c) \n", led2c(leds[1]), led2c(leds[0]), led2c(leds[2]));
-  printf("    (%c)     \n", led2c(leds[4]));
-  first = false;
+  move(0, 0);
+  printw("    [%c]     \n", led2c(leds[3]));
+  printw("[%c] [%c] [%c] \n", led2c(leds[1]), led2c(leds[0]), led2c(leds[2]));
+  printw("    [%c]     \n", led2c(leds[4]));
+  printw("\n");
+  printw("Button 1: %s\n", btn1 ? "pressed" : "released");
+  printw("Button 2: %s\n", btn2 ? "pressed" : "released");
+  printw("Button 3: %s\n", btn3 ? "pressed" : "released");
+  printw("\n");
+  printw("Press keyboard keys 1 - 3 to toggle buttons. Press q to exit.\n");
+  refresh();
 }
 
-int main(int argc, char **argv) {
-  Verilated::commandArgs(argc, argv);
-
+int run () {
   Lemonsoc soc(false, false);
 
   int cycle = 0;
@@ -43,7 +46,16 @@ int main(int argc, char **argv) {
   }
 
   while (!Verilated::gotFinish() && (NUM_CYCLES == -1 || cycle < NUM_CYCLES)) {
-    soc.set_btns(0, 0, 0);
+    char input = getch();
+    if (input == '1')
+      btn1 = !btn1;
+    else if (input == '2')
+      btn2 = !btn2;
+    else if (input == '3')
+      btn3 = !btn3;
+    else if (input == 'q')
+      return 0;
+    soc.set_btns(btn1, btn2, btn3);
 
     if (!soc.step()) {
       printf("Error!\n");
@@ -66,4 +78,21 @@ int main(int argc, char **argv) {
   }
 
   return 0;
+}
+
+int main(int argc, char **argv) {
+  Verilated::commandArgs(argc, argv);
+
+  // Init ncurses
+  initscr();
+  nodelay(stdscr, TRUE); // don't block on getch()
+  noecho(); // don't echo input
+
+  // Run simulation
+  int r = run();
+
+  // De-init ncurses
+  endwin();
+
+  return r;
 }

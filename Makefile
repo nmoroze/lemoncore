@@ -106,7 +106,7 @@ obj_dir/lemonsim.verilator: $(CORE_V_SRCS) $(CORE_V_INC) $(CORE_SIM_CPP_SRCS) $(
 
 SOC_SIM_CPP_SRCS := sim/lemonsoc_sim.cpp sim/lemonsoc.cpp
 obj_dir/lemonsoc_sim.verilator: $(SOC_V_SRCS) $(SOC_V_INC) $(SOC_SIM_CPP_SRCS) sim/lemonsoc.h
-	verilator -CFLAGS "-std=gnu++14 -DFIRMWARE_PATH='\"$(SIM_FW_PATH)\"'" -DSIM --trace -Wall \
+	verilator -CFLAGS "-std=gnu++14 -DFIRMWARE_PATH='\"$(SIM_FW_PATH)\"'" -DSIM --trace -Wall -LDFLAGS "-lncurses" \
 		-cc $< -Irtl/core -Irtl/soc --exe --build  $(SOC_SIM_CPP_SRCS) -o $(notdir $@)
 
 SOC_TB_CPP_SRCS := sim/lemonsoc_tb.cpp sim/lemonsoc.cpp sim/riscv.cpp  sim/verilator-gtest-runner.cpp
