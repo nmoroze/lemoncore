@@ -12,6 +12,14 @@
 #define DEFAULT_FW_PATH "sw/hello.sim.mem"
 #define NUM_CYCLES -1
 
+enum ReturnStatus {
+  Success,
+  FirmwareError,
+  ProcessorException,
+  ProcessorDone,
+  SimulationDone
+};
+
 bool btn1 = false;
 bool btn2 = false;
 bool btn3 = false;
@@ -34,15 +42,14 @@ void output_leds(bool leds[5]) {
   refresh();
 }
 
-int run (std::string firmware_path) {
+ReturnStatus run (std::string firmware_path) {
   Lemonsoc soc(false, false);
 
   int cycle = 0;
 
   // Load test code
   if (!soc.load_firmware(firmware_path)) {
-    std::cerr << "Error reading file " << firmware_path << std::endl;
-    return 1;
+    return FirmwareError;
   }
 
   while (!Verilated::gotFinish() && (NUM_CYCLES == -1 || cycle < NUM_CYCLES)) {
@@ -54,17 +61,15 @@ int run (std::string firmware_path) {
     else if (input == '3')
       btn3 = !btn3;
     else if (input == 'q')
-      return 0;
+      return SimulationDone;
     soc.set_btns(btn1, btn2, btn3);
 
     if (!soc.step()) {
-      printf("Error!\n");
-      return 1;
+      return ProcessorException;
     }
 
     if (soc.is_done()) {
-      printf("Done!\n");
-      return 0;
+      return ProcessorDone;
     }
 
     if (cycle % 99 == 0) {
@@ -77,7 +82,7 @@ int run (std::string firmware_path) {
     cycle++;
   }
 
-  return 0;
+  return SimulationDone;
 }
 
 int main(int argc, char **argv) {
@@ -110,10 +115,22 @@ int main(int argc, char **argv) {
   noecho(); // don't echo input
 
   // Run simulation
-  int r = run(firmware_path);
+  ReturnStatus result = run(firmware_path);
 
   // De-init ncurses
   endwin();
 
-  return r;
+  switch (result) {
+  case FirmwareError:
+    std::cerr << "Error reading file " << firmware_path << std::endl;
+    return 1;
+  case ProcessorException:
+    std::cerr << "Processor had unhandled exception!" << std::endl;
+    return 1;
+  case ProcessorDone:
+    std::cout << "Processor completed executing firmware!" << std::endl;
+    return 0;
+  default:
+    return 0;
+  }
 }
