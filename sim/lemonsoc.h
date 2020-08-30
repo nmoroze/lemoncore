@@ -7,8 +7,8 @@
 
 class Lemonsoc {
  public:
-  explicit Lemonsoc(bool verbose);
-  Lemonsoc(bool verbose, std::string vcd_path);
+  Lemonsoc(bool verbose, bool trace);
+  Lemonsoc(bool verbose, bool trace, std::string vcd_path);
   ~Lemonsoc();
   bool load_firmware(std::string path);
   void reset();
@@ -24,10 +24,11 @@ class Lemonsoc {
   uint32_t get_pc();
   uint32_t get_reg(uint8_t reg);
  private:
-  void init(bool verbose, std::string vcd_path);
+  void init(bool verbose, bool trace, std::string vcd_path);
   void log(const char* fmt...);
 
   bool verbose;
+  bool trace;
   int cycle;
   Vlemonsoc *tb;
   VerilatedVcdC* tfp;

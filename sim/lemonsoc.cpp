@@ -16,38 +16,43 @@
 
 #define DEFAULT_VCD_PATH "lemonsoc.vcd"
 
-Lemonsoc::Lemonsoc(bool verbose) {
-  init(verbose, DEFAULT_VCD_PATH);
+Lemonsoc::Lemonsoc(bool verbose, bool trace) {
+  init(verbose, trace, DEFAULT_VCD_PATH);
 }
 
-Lemonsoc::Lemonsoc(bool verbose, std::string vcd_path) {
-  init(verbose, vcd_path);
+Lemonsoc::Lemonsoc(bool verbose, bool trace, std::string vcd_path) {
+  init(verbose, trace, vcd_path);
 }
 
-void Lemonsoc::init(bool verbose, std::string vcd_path) {
+void Lemonsoc::init(bool verbose, bool trace, std::string vcd_path) {
   this->verbose = verbose;
+  this->trace = trace;
   tb = new Vlemonsoc;
   cycle = 0;
 
   //Verilated::scopesDump();
   svSetScope(svGetScopeFromName("TOP.lemonsoc.ram"));
 
-  // Start tracing
-  tfp = new VerilatedVcdC;
-  Verilated::traceEverOn(true);
-  tb->trace(tfp, 99);
-  tfp->open(vcd_path.c_str());
+  if (trace) {
+    // Start tracing
+    tfp = new VerilatedVcdC;
+    Verilated::traceEverOn(true);
+    tb->trace(tfp, 99);
+    tfp->open(vcd_path.c_str());
+  }
 
   // Reset SoC
   reset();
 }
 
 Lemonsoc::~Lemonsoc() {
-  // Stop tracing
-  tfp->close();
+  if (trace) {
+    // Stop tracing
+    tfp->close();
+    delete tfp;
+  }
 
   delete tb;
-  delete tfp;
 }
 
 bool Lemonsoc::load_firmware(std::string path) {
@@ -60,11 +65,11 @@ void Lemonsoc::reset() {
   tb->BTN_N = 0;
   tb->CLK = 0;
   tb->eval();
-  tfp->dump(cycle);
+  if (trace) tfp->dump(cycle);
   tb->CLK = 1;
   tb->eval();
   tb->BTN_N = 1;
-  tfp->dump(cycle + 1);
+  if (trace) tfp->dump(cycle + 1);
 
   cycle++;
 }
@@ -72,10 +77,10 @@ void Lemonsoc::reset() {
 bool Lemonsoc::step() {
   tb->CLK = 0;
   tb->eval();
-  tfp->dump(2 * cycle);
+  if (trace) tfp->dump(2 * cycle);
   tb->CLK = 1;
   tb->eval();
-  tfp->dump(2 * cycle + 1);
+  if (trace) tfp->dump(2 * cycle + 1);
 
   cycle++;
 

@@ -18,7 +18,7 @@ protected:
     stream << WAVE_OUT_DIR << "LemonsocTest-" << test_name << ".vcd";
     std::string vcd_path = stream.str();
 
-    soc = new Lemonsoc(false, vcd_path);
+    soc = new Lemonsoc(false, true, vcd_path);
   }
   void TearDown() override {
     delete soc;

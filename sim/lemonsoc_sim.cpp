@@ -32,7 +32,7 @@ void output_leds(bool leds[5]) {
 int main(int argc, char **argv) {
   Verilated::commandArgs(argc, argv);
 
-  Lemonsoc soc(false);
+  Lemonsoc soc(false, false);
 
   int cycle = 0;
 
