@@ -56,6 +56,7 @@ SOC_V_INC   := rtl/soc/memmap.vh $(CORE_V_INC)
 # fw var for recipes that reference particular firmware
 FW ?= hello
 FW_PATH = sw/$(FW).mem
+SIM_FW_PATH_BIN = sw/$(FW).sim.bin
 SIM_FW_PATH = sw/$(FW).sim.mem
 
 ## Verilator simulation ##
@@ -83,8 +84,8 @@ test-soc: obj_dir/lemonsoc_tb.verilator $(SIM_FW_PATH)
 
 sim: sim-soc
 
-sim-core: obj_dir/lemonsim.verilator
-	$<
+sim-core: obj_dir/lemonsim.verilator $(SIM_FW_PATH_BIN)
+	$< +firmware=$(SIM_FW_PATH_BIN)
 
 socsim: obj_dir/socsim
 	cp $< $@
@@ -103,7 +104,7 @@ obj_dir/lemontest.verilator: $(CORE_V_SRCS) $(CORE_V_INC) $(CORE_TB_CPP_SRCS) $(
 		--build $(CORE_TB_CPP_SRCS) -o $(notdir $@)
 
 CORE_SIM_CPP_SRCS := sim/lemoncore_sim.cpp sim/lemoncore.cpp sim/util.cpp
-obj_dir/lemonsim.verilator: $(CORE_V_SRCS) $(CORE_V_INC) $(CORE_SIM_CPP_SRCS) $(FW_PATH) sim/lemoncore.h sim/util.h
+obj_dir/lemonsim.verilator: $(CORE_V_SRCS) $(CORE_V_INC) $(CORE_SIM_CPP_SRCS) sim/lemoncore.h sim/util.h
 	verilator -CFLAGS "-std=gnu++14" --trace -Wall -cc $< -Irtl/core --exe \
 		--build $(CORE_SIM_CPP_SRCS) -o $(notdir $@)
 
