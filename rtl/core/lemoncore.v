@@ -23,8 +23,32 @@ module lemoncore (
 
   input         irq_timer_i,
   input         irq_external_i,
-  input         irq_software_i
-);
+  input         irq_software_i,
+
+`ifdef RISCV_FORMAL
+  output        rvfi_valid,
+  output [63:0] rvfi_order,
+  output [31:0] rvfi_insn,
+  output        rvfi_trap,
+  output        rvfi_halt,
+  output reg    rvfi_intr,
+  output [ 1:0] rvfi_mode,
+  output [ 1:0] rvfi_ixl,
+  output [ 4:0] rvfi_rs1_addr,
+  output [ 4:0] rvfi_rs2_addr,
+  output [31:0] rvfi_rs1_rdata,
+  output [31:0] rvfi_rs2_rdata,
+  output [ 4:0] rvfi_rd_addr,
+  output [31:0] rvfi_rd_wdata,
+  output [31:0] rvfi_pc_rdata,
+  output [31:0] rvfi_pc_wdata,
+  output [31:0] rvfi_mem_addr,
+  output [ 3:0] rvfi_mem_rmask,
+  output [ 3:0] rvfi_mem_wmask,
+  output [31:0] rvfi_mem_rdata,
+  output [31:0] rvfi_mem_wdata,
+`endif
+  );
 
   `include "control_signals.vh"
   `include "csrs.vh"
@@ -450,7 +474,7 @@ module lemoncore (
     csr_read_q <= csr_read_d;
   end
 
-  wire exception;
+  wire exception, trap;
   always @(posedge clk_i) begin
     if (rst_i) begin
       mtvec_q <= EXCEPTION_ADDRESS;
@@ -651,15 +675,68 @@ module lemoncore (
     end
   end
 
-  assign exception = (misaligned_instr & ctrl_state == CTRL_STATE_FETCH) |
-                     (access_fault_instr & ctrl_state == CTRL_STATE_FETCH) |
-                     (illegal_instr & ctrl_state == CTRL_STATE_DECODE) |
+  assign trap = (misaligned_instr & ctrl_state == CTRL_STATE_FETCH) |
+                (access_fault_instr & ctrl_state == CTRL_STATE_FETCH) |
+                (illegal_instr & ctrl_state == CTRL_STATE_DECODE) |
+                (misaligned_load & ctrl_state == CTRL_STATE_MEM) |
+                (misaligned_store & ctrl_state == CTRL_STATE_MEM) |
+                (access_fault_load & ctrl_state == CTRL_STATE_MEM) |
+                (access_fault_store & ctrl_state == CTRL_STATE_MEM);
+
+  assign exception = trap |
                      (ecall & ctrl_state == CTRL_STATE_DECODE) |
                      (ebreak & ctrl_state == CTRL_STATE_DECODE) |
-                     (misaligned_load & ctrl_state == CTRL_STATE_MEM) |
-                     (misaligned_store & ctrl_state == CTRL_STATE_MEM) |
-                     (access_fault_load & ctrl_state == CTRL_STATE_MEM) |
-                     (access_fault_store & ctrl_state == CTRL_STATE_MEM) |
                      irq;
+
+  /*
+   * RVFI  - RISC-V Formal Interface
+   */
+`ifdef RISCV_FORMAL
+  // assert when instruction retired
+  assign rvfi_valid = instret;
+  // must be unique index for instruction, so use # of instruction retired
+	assign rvfi_order = instret_q;
+  // current instruction
+	assign rvfi_insn = instr_q;
+  // assert for illegal instruction, misaligned mem read, memory access violations
+  // TODO: Not sure if this will work -- instret isn't set to 1 on exception. is that incorrect?
+  assign rvfi_trap = trap;
+  // I don't think the core can halt
+	assign rvfi_halt = 1'b0;
+  // rvfi_intr must be set for the first instruction that is part of a trap handler
+  always @(posedge clk_i) begin
+    if (rst_i) begin
+      rvfi_intr <= 1'b0;
+    end else if (exception) begin
+      rvfi_intr <= 1'b1;
+    end else if (instret) begin
+      // reset after instruction retired
+      rvfi_intr <= 1'b0;
+    end
+  end
+
+	assign rvfi_mode = 2'd3; // always in M-Mode
+	assign rvfi_ixl = 2'd1; // always use 32 bit regs
+
+	assign rvfi_rs1_addr = rs1;
+  assign rvfi_rs2_addr = rs2;
+  assign rvfi_rs1_rdata = rd1_q;
+  assign rvfi_rs2_rdata = rd2_q;
+	assign rvfi_rd_addr = rd;
+	assign rvfi_rd_wdata = rd != 5'b0 ? wdata : 32'b0;
+
+	assign rvfi_pc_rdata = pc_q;
+	assign rvfi_pc_wdata = pc_d;
+
+  assign rvfi_mem_addr = mem_read_req_valid_o ? mem_read_req_addr_o : mem_write_req_addr_o;
+  assign rvfi_mem_rmask = mem_read_req_valid_o ?
+                          ((ext_sel == 3'b010) ? 4'b1111 : // sw
+                           (ext_sel == 3'b001) ? 4'b0011 : // sh
+                           (ext_sel == 3'b000) ? 4'b0001 : // sb
+                           4'b0) : 4'b0;
+  assign rvfi_mem_wmask = mem_write_req_valid_o ? mem_write_req_mask_o : 4'b0;
+  assign rvfi_mem_rdata = mem_read_res_data_i;
+  assign rvfi_mem_wdata = mem_write_req_data_o;
+`endif
 
 endmodule
