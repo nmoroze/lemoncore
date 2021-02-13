@@ -2,29 +2,6 @@ module lemoncore (
   input         clk_i,
   input         rst_i,
 
-  output [31:0] instr_req_addr_o,
-  output        instr_req_valid_o,
-  input [31:0]  instr_res_data_i,
-  input         instr_res_valid_i,
-  input         instr_res_error_i,
-
-  output [31:0] mem_read_req_addr_o,
-  output        mem_read_req_valid_o,
-  input [31:0]  mem_read_res_data_i,
-  input         mem_read_res_valid_i,
-  input         mem_read_res_error_i,
-
-  output [31:0] mem_write_req_addr_o,
-  output [31:0] mem_write_req_data_o,
-  output [3:0]  mem_write_req_mask_o,
-  output        mem_write_req_valid_o,
-  input         mem_write_res_valid_i,
-  input         mem_write_res_error_i,
-
-  input         irq_timer_i,
-  input         irq_external_i,
-  input         irq_software_i,
-
 `ifdef RISCV_FORMAL
   output        rvfi_valid,
   output [63:0] rvfi_order,
@@ -48,6 +25,29 @@ module lemoncore (
   output [31:0] rvfi_mem_rdata,
   output [31:0] rvfi_mem_wdata,
 `endif
+
+  output [31:0] instr_req_addr_o,
+  output        instr_req_valid_o,
+  input [31:0]  instr_res_data_i,
+  input         instr_res_valid_i,
+  input         instr_res_error_i,
+
+  output [31:0] mem_read_req_addr_o,
+  output        mem_read_req_valid_o,
+  input [31:0]  mem_read_res_data_i,
+  input         mem_read_res_valid_i,
+  input         mem_read_res_error_i,
+
+  output [31:0] mem_write_req_addr_o,
+  output [31:0] mem_write_req_data_o,
+  output [3:0]  mem_write_req_mask_o,
+  output        mem_write_req_valid_o,
+  input         mem_write_res_valid_i,
+  input         mem_write_res_error_i,
+
+  input         irq_timer_i,
+  input         irq_external_i,
+  input         irq_software_i
   );
 
   `include "control_signals.vh"
