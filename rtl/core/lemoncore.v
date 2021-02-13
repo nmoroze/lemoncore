@@ -84,22 +84,20 @@ module lemoncore (
   wire [2:0]  wb_ctrl_state_next;
 
   always @(*) begin
-    if (exception) begin
-      ctrl_state_next = CTRL_STATE_FETCH;
-    end else begin
-      case (ctrl_state)
-        CTRL_STATE_FETCH: ctrl_state_next = fetch_ctrl_state_next;
-        CTRL_STATE_DECODE: ctrl_state_next = decode_ctrl_state_next;
-        CTRL_STATE_EX: ctrl_state_next = ex_ctrl_state_next;
-        CTRL_STATE_MEM: ctrl_state_next = mem_ctrl_state_next;
-        CTRL_STATE_WB: ctrl_state_next = wb_ctrl_state_next;
-        default: ctrl_state_next = CTRL_STATE_ERR;
-      endcase
-    end
+    case (ctrl_state)
+      CTRL_STATE_FETCH: ctrl_state_next = fetch_ctrl_state_next;
+      CTRL_STATE_DECODE: ctrl_state_next = decode_ctrl_state_next;
+      CTRL_STATE_EX: ctrl_state_next = ex_ctrl_state_next;
+      CTRL_STATE_MEM: ctrl_state_next = mem_ctrl_state_next;
+      CTRL_STATE_WB: ctrl_state_next = wb_ctrl_state_next;
+      default: ctrl_state_next = CTRL_STATE_ERR;
+    endcase
   end
 
   always @(posedge clk_i) begin
     if (rst_i) begin
+      ctrl_state <= CTRL_STATE_FETCH;
+    end else if (exception) begin
       ctrl_state <= CTRL_STATE_FETCH;
     end else begin
       ctrl_state <= ctrl_state_next;
@@ -109,9 +107,7 @@ module lemoncore (
   always @(posedge clk_i) begin
     if (rst_i) begin
       pc_q <= BOOT_ADDRESS;
-    end else if (ctrl_state_next == CTRL_STATE_FETCH) begin
-      // Latch next PC right before transitioning to fetch
-      if (exception) begin
+    end else if (exception) begin
         if (mtvec_q[0] == 1'b1 && irq) begin
           // vectored mode
           pc_q <= {mtvec_q[31:2] + (mcause_q[29:0] << 2), 2'b00};
@@ -119,7 +115,9 @@ module lemoncore (
           // normal mode
           pc_q <= {mtvec_q[31:2], 2'b00};
         end
-      end else if (mret) begin
+    end else if (ctrl_state_next == CTRL_STATE_FETCH) begin
+      // Latch next PC right before transitioning to fetch
+      if (mret) begin
         pc_q <= mepc_q;
       end else if (ctrl_state != CTRL_STATE_FETCH) begin
         // If we're blocked in fetch waiting for memory reply, don't continue to
@@ -142,9 +140,10 @@ module lemoncore (
   assign instr_req_addr_o = pc_q;
   // If we get an interrupt during fetch state, need valid to go low while we
   // remain in fetch state in order to indicate we'd like to fetch a new instr
-  assign instr_req_valid_o = ~irq & ~misaligned_instr & (ctrl_state == CTRL_STATE_FETCH);
+  assign instr_req_valid_o = ~irq & (ctrl_state == CTRL_STATE_FETCH);
 
-  assign misaligned_instr = pc_q[1:0] != 2'b00;
+  assign misaligned_instr = (pc_d[1:0] != 2'b00) &&
+                            (ctrl_state_next == CTRL_STATE_FETCH);
   assign access_fault_instr = instr_res_error_i;
 
   // hang on this state until we get a valid instruction fetch response
@@ -659,7 +658,7 @@ module lemoncore (
     end else if (illegal_instr) begin
       mtval_d = instr_q;
     end else if (misaligned_instr) begin
-      mtval_d = pc_q;
+      mtval_d = pc_d;
     end else if (ecall) begin
       mtval_d = 32'd0;
     end else if (ebreak) begin
@@ -675,7 +674,7 @@ module lemoncore (
     end
   end
 
-  assign trap = (misaligned_instr & ctrl_state == CTRL_STATE_FETCH) |
+  assign trap = misaligned_instr |
                 (access_fault_instr & ctrl_state == CTRL_STATE_FETCH) |
                 (illegal_instr & ctrl_state == CTRL_STATE_DECODE) |
                 (misaligned_load & ctrl_state == CTRL_STATE_MEM) |
