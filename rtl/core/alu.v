@@ -8,6 +8,10 @@ module alu (
 
   `include "control_signals.vh"
 
+  // Need signed LHS for arithmetic right shift
+  wire signed [31:0] sra_result;
+  assign sra_result = $signed(a_i) >>> $signed(b_i[4:0]);
+
   always @(*) begin
     case (op_i)
       ALU_OP_ADD: out_o = a_i + b_i;
@@ -15,7 +19,7 @@ module alu (
       ALU_OP_CMP: out_o = $signed(a_i) < $signed(b_i) ? 32'b1 : 32'b0;
       ALU_OP_CMPU: out_o = a_i < b_i ? 32'b1 : 32'b0;
       ALU_OP_XOR: out_o = a_i ^ b_i;
-      ALU_OP_SHR: out_o = shift_type_i ? a_i >>> b_i[4:0] : a_i >> b_i[4:0];
+      ALU_OP_SHR: out_o = shift_type_i ? sra_result : a_i >> b_i[4:0];
       ALU_OP_OR: out_o = a_i | b_i;
       ALU_OP_AND: out_o = a_i & b_i;
       default: out_o = 32'b0;

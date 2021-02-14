@@ -49,3 +49,16 @@ TEST_F(AluTest, UnsignedComparision) {
 
   EXPECT_EQ(tb->out_o, 0);
 }
+
+TEST_F(AluTest, ArithmeticVsLogicalShift) {
+  tb->a_i = -1;
+  tb->b_i = 31;
+  tb->op_i = ALU_OP_SHR;
+  tb->shift_type_i = 1; // arithmetic
+  tb->eval();
+  EXPECT_EQ(tb->out_o, -1);
+
+  tb->shift_type_i = 0; // logical
+  tb->eval();
+  EXPECT_EQ(tb->out_o, 1);
+}
