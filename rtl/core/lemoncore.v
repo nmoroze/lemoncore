@@ -721,8 +721,8 @@ module lemoncore (
   assign rvfi_rs2_addr = rs2;
   assign rvfi_rs1_rdata = rd1_q;
   assign rvfi_rs2_rdata = rd2_q;
-	assign rvfi_rd_addr = rd;
-	assign rvfi_rd_wdata = rd != 5'b0 ? wdata : 32'b0;
+	assign rvfi_rd_addr = reg_w ? rd : 5'b0;
+	assign rvfi_rd_wdata = rvfi_rd_addr != 5'b0 ? wdata : 32'b0;
 
 	assign rvfi_pc_rdata = pc_q;
 	assign rvfi_pc_wdata = pc_d;
