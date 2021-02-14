@@ -2,6 +2,9 @@
 
 Verifying Lemoncore with RISC-V Formal (WIP)
 
+Status:
+- All instruction checks pass
+
 ## Prereqs
 1) Symbiyosys
 2) Boolector

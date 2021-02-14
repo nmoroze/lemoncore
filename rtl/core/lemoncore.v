@@ -22,7 +22,7 @@ module lemoncore (
   output [31:0] rvfi_mem_addr,
   output reg [ 3:0] rvfi_mem_rmask,
   output [ 3:0] rvfi_mem_wmask,
-  output [31:0] rvfi_mem_rdata,
+  output reg [31:0] rvfi_mem_rdata,
   output [31:0] rvfi_mem_wdata,
 `endif
 
@@ -737,8 +737,8 @@ module lemoncore (
     end else begin
       if (mem_read_req_valid_o) begin
         rvfi_mem_rmask <= ((ext_sel == 3'b010) ? 4'b1111 :
-                          (ext_sel == 3'b001) ? 4'b0011 :
-                          (ext_sel == 3'b000) ? 4'b0001 :
+                          (ext_sel == 3'b001 | ext_sel == 3'b101) ? 4'b0011 :
+                          (ext_sel == 3'b000 | ext_sel == 3'b100) ? 4'b0001 :
                           4'b0);
       end
       if (mem_read_res_valid_i) begin
