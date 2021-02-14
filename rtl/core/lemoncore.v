@@ -20,7 +20,7 @@ module lemoncore (
   output [31:0] rvfi_pc_rdata,
   output [31:0] rvfi_pc_wdata,
   output [31:0] rvfi_mem_addr,
-  output [ 3:0] rvfi_mem_rmask,
+  output reg [ 3:0] rvfi_mem_rmask,
   output [ 3:0] rvfi_mem_wmask,
   output [31:0] rvfi_mem_rdata,
   output [31:0] rvfi_mem_wdata,
@@ -728,13 +728,25 @@ module lemoncore (
 	assign rvfi_pc_wdata = pc_d;
 
   assign rvfi_mem_addr = mem_read_req_valid_o ? mem_read_req_addr_o : mem_write_req_addr_o;
-  assign rvfi_mem_rmask = mem_read_req_valid_o ?
-                          ((ext_sel == 3'b010) ? 4'b1111 : // sw
-                           (ext_sel == 3'b001) ? 4'b0011 : // sh
-                           (ext_sel == 3'b000) ? 4'b0001 : // sb
-                           4'b0) : 4'b0;
+  always @(posedge clk_i) begin
+    if (rst_i) begin
+      rvfi_mem_rmask <= 4'b0;
+    end else if (instret) begin
+      // reset after instruction retired
+      rvfi_mem_rmask <= 4'b0;
+    end else begin
+      if (mem_read_req_valid_o) begin
+        rvfi_mem_rmask <= ((ext_sel == 3'b010) ? 4'b1111 :
+                          (ext_sel == 3'b001) ? 4'b0011 :
+                          (ext_sel == 3'b000) ? 4'b0001 :
+                          4'b0);
+      end
+      if (mem_read_res_valid_i) begin
+        rvfi_mem_rdata <= mem_read_res_data_i;
+      end
+    end
+  end
   assign rvfi_mem_wmask = mem_write_req_valid_o ? mem_write_req_mask_o : 4'b0;
-  assign rvfi_mem_rdata = mem_read_res_data_i;
   assign rvfi_mem_wdata = mem_write_req_data_o;
 `endif
 
