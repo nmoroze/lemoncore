@@ -33,11 +33,16 @@ jobs:
         run: .ci/install-icestorm.sh
       - name: Install NextPNR
         run: .ci/install-nextpnr.sh
+      - name: Install Boolector
+        run: .ci/install-boolector.sh
+      - name: Install SymbiYosys
+        run: .ci/install-symbiyosys.sh
       - name: Install bin2coe
         run: pip3 install bin2coe
       - name: Run tests
         run: |
           PATH="$HOME/.local/bin:$PATH"
+          cd formal; ./run.sh; cd ..;
           make sim-core;
           make test-core;
           make test-soc;
