@@ -1,0 +1,44 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout Lemoncore
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Update apt repository
+        run: sudo apt-get update -y
+      - name: Install packages
+        run: >-
+          sudo apt-get install
+          build-essential
+          flex
+          bison
+          libfl2
+          libfl-dev
+          gcc-riscv64-unknown-elf
+          yosys
+          libboost-all-dev
+          libeigen3-dev
+          libftdi-dev
+      - name: Install Verilator
+        run: .ci/install-verilator.sh
+      - name: Install Google Test
+        run: .ci/install-gtest.sh
+      - name: Install Icestorm
+        run: .ci/install-icestorm.sh
+      - name: Install NextPNR
+        run: .ci/install-nextpnr.sh
+      - name: Install bin2coe
+        run: pip3 install bin2coe
+      - name: Run tests
+        run: |
+          PATH="$HOME/.local/bin:$PATH"
+          make sim-core;
+          make test-core;
+          make test-soc;
+          make
