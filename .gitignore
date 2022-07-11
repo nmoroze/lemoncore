@@ -1,3 +1,7 @@
+# SC outputs
+build/
+__pycache__/
+
 # Verilator outputs
 obj_dir/
 socsim
