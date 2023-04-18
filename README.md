@@ -99,6 +99,24 @@ make prog FW=<firmware>
 Injects compiled `sw/<firmware>.c` into bitstream, and flashes it onto a connected FPGA using
 iceprog.
 
+### ASIC build
+
+#### Dependencies
+
+SiliconCompiler:
+
+```
+pip install siliconcompiler
+```
+
+#### Commands
+
+```
+python lemoncore.py -remote
+```
+
+Builds Lemoncore ASIC using SiliconCompiler's cloud beta server.
+
 ## Repository Contents
 #### `rtl/core/`
 RTL for Lemoncore CPU.

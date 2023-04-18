@@ -16,3 +16,7 @@ socsim
 *.asc
 *.log
 lemonsoc.json
+
+# SiliconCompiler
+build/
+__pycache__/
